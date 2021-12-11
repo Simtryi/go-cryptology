@@ -2,6 +2,7 @@
 Go implementation of the cryptology
 
 - [X] RSA
+- [X] VRF
 - [X] BLS
 - [X] Schnorr
-- [X] edwards2551925519
+- [X] Edwards25519

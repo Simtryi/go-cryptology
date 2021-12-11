@@ -2,12 +2,17 @@ package schnorr
 
 import (
 	"errors"
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/hbakhtiyor/schnorr"
 	"math/big"
 	"strings"
 	"testing"
 
 	"encoding/hex"
 )
+
+// Curve is a KoblitzCurve which implements secp256k1.
+var Curve = btcec.S256()
 
 func TestSign(t *testing.T) {
 	for _, test := range testCases {
@@ -20,7 +25,7 @@ func TestSign(t *testing.T) {
 		m := decodeMessage(test.m, t)
 
 		// when
-		result, err := Sign(d, m)
+		result, err := Sign(m, d)
 		if err != nil {
 			t.Fatalf("Unexpected error from Sign(%s, %s): %v", test.d, test.m, err)
 		}
@@ -61,13 +66,13 @@ func TestAggregateSignatures(t *testing.T) {
 	}
 
 	t.Run("Can sign and verify two aggregated signatures over same message", func(t *testing.T) {
-		sig, err := AggregateSignatures(pks[:2], m)
+		sig, err := AggregateSignatures(m, pks[:2])
 		if err != nil {
 			t.Fatalf("Unexpected error from AggregateSignatures(%x, %x): %v", pks[:2], m, err)
 		}
 
 		Px, Py := Curve.Add(Pxs[0], Pys[0], Pxs[1], Pys[1])
-		copy(pk[:], Marshal(Curve, Px, Py))
+		copy(pk[:], schnorr.Marshal(Curve, Px, Py))
 
 		observedSum := hex.EncodeToString(pk[:])
 		expected := "02bca9ea6e07a63bec3d28a00329ac3d25d2595a5f86e512142affde48a34d9a97"
@@ -77,7 +82,7 @@ func TestAggregateSignatures(t *testing.T) {
 			t.Fatalf("Sum of public keys, %s, want %s", observedSum, expected)
 		}
 
-		observed, err := Verify(pk, m, sig)
+		observed, err := Verify(m, pk, sig)
 		if err != nil {
 			t.Fatalf("Unexpected error from Verify(%x, %x, %x): %v", pk, m, sig, err)
 		}
@@ -89,13 +94,13 @@ func TestAggregateSignatures(t *testing.T) {
 	})
 
 	t.Run("Can sign and verify two more aggregated signatures over same message", func(t *testing.T) {
-		sig, err := AggregateSignatures(pks[1:3], m)
+		sig, err := AggregateSignatures(m, pks[1:3])
 		if err != nil {
 			t.Fatalf("Unexpected error from AggregateSignatures(%x, %x): %v", pks[1:3], m, err)
 		}
 
 		Px, Py := Curve.Add(Pxs[1], Pys[1], Pxs[2], Pys[2])
-		copy(pk[:], Marshal(Curve, Px, Py))
+		copy(pk[:], schnorr.Marshal(Curve, Px, Py))
 
 		observedSum := hex.EncodeToString(pk[:])
 		expected := "03f0a6305d39a34582ba49a78bdf38ced935b3efce1e889d6820103665f35ee45b"
@@ -105,7 +110,7 @@ func TestAggregateSignatures(t *testing.T) {
 			t.Fatalf("Sum of public keys, %s, want %s", observedSum, expected)
 		}
 
-		observed, err := Verify(pk, m, sig)
+		observed, err := Verify(m, pk, sig)
 		if err != nil {
 			t.Fatalf("Unexpected error from Verify(%x, %x, %x): %v", pk, m, sig, err)
 		}
@@ -117,14 +122,14 @@ func TestAggregateSignatures(t *testing.T) {
 	})
 
 	t.Run("Can sign and verify three aggregated signatures over same message", func(t *testing.T) {
-		sig, err := AggregateSignatures(pks[:3], m)
+		sig, err := AggregateSignatures(m, pks[:3])
 		if err != nil {
 			t.Fatalf("Unexpected error from AggregateSignatures(%x, %x): %v", pks[:3], m, err)
 		}
 
 		Px, Py := Curve.Add(Pxs[0], Pys[0], Pxs[1], Pys[1])
 		Px, Py = Curve.Add(Px, Py, Pxs[2], Pys[2])
-		copy(pk[:], Marshal(Curve, Px, Py))
+		copy(pk[:], schnorr.Marshal(Curve, Px, Py))
 
 		observedSum := hex.EncodeToString(pk[:])
 		expected := "025038e8f113785d84e86584d8a323debb1c212bf19c678185ddb1bb3e478ecde3"
@@ -134,7 +139,7 @@ func TestAggregateSignatures(t *testing.T) {
 			t.Fatalf("Sum of public keys, %s, want %s", observedSum, expected)
 		}
 
-		observed, err := Verify(pk, m, sig)
+		observed, err := Verify(m, pk, sig)
 		if err != nil {
 			t.Fatalf("Unexpected error from Verify(%x, %x, %x): %v", pk, m, sig, err)
 		}
@@ -151,7 +156,7 @@ func TestAggregateSignatures(t *testing.T) {
 		m := decodeMessage("243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89", t)
 
 		pks := []*big.Int{privKey1, privKey2}
-		aggregatedSignature, err := AggregateSignatures(pks, m)
+		aggregatedSignature, err := AggregateSignatures(m, pks)
 		expected := "d60d7f81c15d57b04f8f6074de17f1b9eef2e0a9c9b2e93550c15b45d6998dc24ef5e393b356e7c334f36cee15e0f5f1e9ce06e7911793ddb9bd922d545b7525"
 		observed := hex.EncodeToString(aggregatedSignature[:])
 
@@ -167,11 +172,11 @@ func TestAggregateSignatures(t *testing.T) {
 		pubKey1 := decodePublicKey("02DFF1D77F2A671C5F36183726DB2341BE58FEAE1DA2DECED843240F7B502BA659", t)
 		pubKey2 := decodePublicKey("03FAC2114C2FBB091527EB7C64ECB11F8021CB45E8E7809D3C0938E4B8C0E5F84B", t)
 
-		P1x, P1y := Unmarshal(Curve, pubKey1[:])
-		P2x, P2y := Unmarshal(Curve, pubKey2[:])
+		P1x, P1y := schnorr.Unmarshal(Curve, pubKey1[:])
+		P2x, P2y := schnorr.Unmarshal(Curve, pubKey2[:])
 		Px, Py := Curve.Add(P1x, P1y, P2x, P2y)
 
-		copy(pk[:], Marshal(Curve, Px, Py))
+		copy(pk[:], schnorr.Marshal(Curve, Px, Py))
 
 		observed = hex.EncodeToString(pk[:])
 		expected = "03f0a6305d39a34582ba49a78bdf38ced935b3efce1e889d6820103665f35ee45b"
@@ -181,7 +186,7 @@ func TestAggregateSignatures(t *testing.T) {
 			t.Fatalf("Sum of public keys, %s, want %s", observed, expected)
 		}
 
-		result, err := Verify(pk, m, aggregatedSignature)
+		result, err := Verify(m, pk, aggregatedSignature)
 		if err != nil {
 			t.Fatalf("Unexpected error from Verify(%x, %x, %x): %v", pk, m, aggregatedSignature, err)
 		}
@@ -201,7 +206,7 @@ func TestVerify(t *testing.T) {
 		sig := decodeSignature(test.sig, t)
 
 		// when
-		observed, err := Verify(pk, m, sig)
+		observed, err := Verify(m, pk, sig)
 		if err != nil && (test.err == nil || err.Error() != test.err.Error()) {
 			t.Fatalf("Unexpected error from Verify(%s, %s, %s): %v", test.pk, test.m, test.sig, err)
 		}
@@ -237,7 +242,7 @@ func TestBatchVerify(t *testing.T) {
 
 	checkBatchVerify := func(b *Batch, expected bool, e error) {
 		// when
-		observed, err := BatchVerify(b.PublicKeys, b.Messages, b.Signatures)
+		observed, err := BatchVerify(b.Messages, b.PublicKeys, b.Signatures)
 		if err != nil && (e == nil || err.Error() != e.Error()) {
 			t.Fatalf("Unexpected error from BatchVerify(%x, %x, %x): %v", b.PublicKeys, b.Messages, b.Signatures, err)
 		}
@@ -281,7 +286,7 @@ func BenchmarkSign(b *testing.B) {
 
 			d := decodePrivateKey(test.d, nil)
 			m := decodeMessage(test.m, nil)
-			Sign(d, m)
+			Sign(m, d)
 		}
 	}
 }
@@ -293,7 +298,7 @@ func BenchmarkVerify(b *testing.B) {
 			m := decodeMessage(test.m, nil)
 			sig := decodeSignature(test.sig, nil)
 
-			Verify(pk, m, sig)
+			Verify(m, pk, sig)
 		}
 	}
 }
@@ -305,7 +310,7 @@ func BenchmarkBatchVerify(b *testing.B) {
 			m := decodeMessage(test.m, nil)
 			sig := decodeSignature(test.sig, nil)
 
-			BatchVerify([][33]byte{pk}, [][32]byte{m}, [][64]byte{sig})
+			BatchVerify([][32]byte{m}, [][33]byte{pk}, [][64]byte{sig})
 		}
 	}
 }
@@ -317,7 +322,7 @@ func BenchmarkAggregateSignatures(b *testing.B) {
 		m := decodeMessage("243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89", nil)
 
 		pks := []*big.Int{privKey1, privKey2}
-		AggregateSignatures(pks, m)
+		AggregateSignatures(m, pks)
 	}
 }
 

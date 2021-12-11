@@ -17,13 +17,13 @@ func GenBLSKey() (priKey *g2pubs.SecretKey, pubKey *g2pubs.PublicKey) {
 }
 
 //	digital signature
-func Sign(data []byte, priKey *g2pubs.SecretKey) *g2pubs.Signature {
-	return g2pubs.Sign(data, priKey)
+func Sign(message []byte, priKey *g2pubs.SecretKey) *g2pubs.Signature {
+	return g2pubs.Sign(message, priKey)
 }
 
 //	verify signature
-func Verify(data []byte, pubKey *g2pubs.PublicKey, signature *g2pubs.Signature) bool {
-	return g2pubs.Verify(data, pubKey, signature)
+func Verify(message []byte, pubKey *g2pubs.PublicKey, signature *g2pubs.Signature) bool {
+	return g2pubs.Verify(message, pubKey, signature)
 }
 
 //	aggregate public keys
@@ -55,11 +55,11 @@ func AggregateSignatures(sigs []*g2pubs.Signature) *g2pubs.Signature {
 }
 
 //	verify aggregate signature
-func VerifyAggregate(data []byte, pubKeys []*g2pubs.PublicKey, signature *g2pubs.Signature) bool {
-	return signature.VerifyAggregateCommon(pubKeys, data)
+func VerifyAggregate(message []byte, pubKeys []*g2pubs.PublicKey, signature *g2pubs.Signature) bool {
+	return signature.VerifyAggregateCommon(pubKeys, message)
 }
 
 //	batch verify aggregate signature
-func BatchVerifyAggregate(data [][]byte, pubKeys []*g2pubs.PublicKey, signature *g2pubs.Signature) bool {
-	return signature.VerifyAggregate(pubKeys, data)
+func BatchVerifyAggregate(message [][]byte, pubKeys []*g2pubs.PublicKey, signature *g2pubs.Signature) bool {
+	return signature.VerifyAggregate(pubKeys, message)
 }

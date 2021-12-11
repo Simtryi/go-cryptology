@@ -18,8 +18,8 @@ func GenRSAKey() (priKey *rsa.PrivateKey, pubKey *rsa.PublicKey) {
 }
 
 //	digital signature
-func Sign(data []byte, priKey *rsa.PrivateKey) []byte {
-	signature, err := rsa.SignPKCS1v15(crand.Reader, priKey, crypto.SHA256, data)
+func Sign(message []byte, priKey *rsa.PrivateKey) []byte {
+	signature, err := rsa.SignPKCS1v15(crand.Reader, priKey, crypto.SHA256, message)
 	if err != nil {
 		log.Fatalf("[RSA] sign failed, %v\n", err)
 	}
@@ -28,8 +28,8 @@ func Sign(data []byte, priKey *rsa.PrivateKey) []byte {
 }
 
 //	verify signature
-func Verify(data []byte, pubKey *rsa.PublicKey, signature []byte, ) bool {
-	if err := rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, data, signature); err != nil {
+func Verify(message []byte, pubKey *rsa.PublicKey, signature []byte, ) bool {
+	if err := rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, message, signature); err != nil {
 		return false
 	}
 

@@ -19,11 +19,11 @@ func TestBasicVerify(t *testing.T) {
 	t0 := time.Now()
 
 	//	digital signature
-	data := Encode("hello world")
-	signature := Sign(data, priKey)
+	message := Encode("hello world")
+	signature := Sign(message, priKey)
 
 	//	verify signature
-	result := Verify(data, pubKey, signature)
+	result := Verify(message, pubKey, signature)
 	wanted := true
 	if result != wanted {
 		t.Fatalf("got result %v but expected %v\n", result, wanted)
@@ -42,11 +42,11 @@ func TestFailVerify(t *testing.T) {
 	t0 := time.Now()
 
 	//	digital signature
-	data := Encode("hello world")
-	signature := Sign(data, priKey1)
+	message := Encode("hello world")
+	signature := Sign(message, priKey1)
 
 	//	verify signature
-	result := Verify(data, pubKey2, signature)
+	result := Verify(message, pubKey2, signature)
 	wanted := false
 	if result != wanted {
 		t.Fatalf("got result %v but expected %v\n", result, wanted)
@@ -59,13 +59,13 @@ func BenchmarkSign(b *testing.B) {
 	//	generate RSA key
 	priKey, _ := GenRSAKey()
 
-	data := Encode("hello world")
-	wanted := Sign(data, priKey)
+	message := Encode("hello world")
+	wanted := Sign(message, priKey)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		//	digital signature
-		signature := Sign(data, priKey)
+		signature := Sign(message, priKey)
 		if bytes.Compare(wanted, signature) != 0{
 			b.Fatalf("sign failed")
 		}
@@ -77,13 +77,13 @@ func BenchmarkVerify(b *testing.B) {
 	priKey, pubKey := GenRSAKey()
 
 	//	digital signature
-	data := Encode("hello world")
-	signature := Sign(data, priKey)
+	message := Encode("hello world")
+	signature := Sign(message, priKey)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		//	verify signature
-		result := Verify(data, pubKey, signature)
+		result := Verify(message, pubKey, signature)
 		if result != true {
 			b.Fatalf("verify failed")
 		}
@@ -94,15 +94,15 @@ func BenchmarkRSA(b *testing.B) {
 	//	generate RSA key
 	priKey, pubKey := GenRSAKey()
 
-	data := Encode("hello world")
+	message := Encode("hello world")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		//	digital signature
-		signature := Sign(data, priKey)
+		signature := Sign(message, priKey)
 
 		//	verify signature
-		result := Verify(data, pubKey, signature)
+		result := Verify(message, pubKey, signature)
 		if result != true {
 			b.Fatalf("verify failed")
 		}

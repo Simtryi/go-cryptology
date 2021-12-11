@@ -20,11 +20,11 @@ func TestVerify(t *testing.T) {
 	t0 := time.Now()
 
 	//	digital signature
-	data := Encode("hello world")
-	signature := Sign(data, priKey)
+	message := Encode("hello world")
+	signature := Sign(message, priKey)
 
 	//	verify signature
-	result := Verify(data, pubKey, signature)
+	result := Verify(message, pubKey, signature)
 	wanted := true
 	if result != wanted {
 		t.Fatalf("got result %v but expected %v\n", result, wanted)
@@ -43,11 +43,11 @@ func TestFailVerify(t *testing.T) {
 	t0 := time.Now()
 
 	//	digital signature
-	data := Encode("hello world")
-	signature := Sign(data, priKey1)
+	message := Encode("hello world")
+	signature := Sign(message, priKey1)
 
 	//	verify signature
-	result := Verify(data, pubKey2, signature)
+	result := Verify(message, pubKey2, signature)
 	wanted := false
 	if result != wanted {
 		t.Fatalf("got result %v but expected %v\n", result, wanted)
@@ -59,7 +59,7 @@ func TestFailVerify(t *testing.T) {
 func TestVerifyAggregateSignature(t *testing.T) {
 	fmt.Println("Test : aggregate signature ...")
 
-	data := Encode("hello world")
+	message := Encode("hello world")
 
 	var pubKeys []*g2pubs.PublicKey
 	var sigs []*g2pubs.Signature
@@ -67,7 +67,7 @@ func TestVerifyAggregateSignature(t *testing.T) {
 		priKey, pubKey := GenBLSKey()
 		pubKeys = append(pubKeys, pubKey)
 
-		signature := Sign(data, priKey)
+		signature := Sign(message, priKey)
 		sigs = append(sigs, signature)
 	}
 
@@ -75,7 +75,7 @@ func TestVerifyAggregateSignature(t *testing.T) {
 
 	aggregateSignature := AggregateSignatures(sigs)
 
-	result := VerifyAggregate(data, pubKeys, aggregateSignature)
+	result := VerifyAggregate(message, pubKeys, aggregateSignature)
 	wanted := true
 	if result != wanted {
 		t.Fatalf("got result %v but expected %v\n", result, wanted)
@@ -88,23 +88,23 @@ func TestBatchVerifyAggregateSignature(t *testing.T) {
 	fmt.Println("Test : batch aggregate signature ...")
 
 	var pubKeys []*g2pubs.PublicKey
-	var data []interface{}
+	var message []interface{}
 	var sigs []*g2pubs.Signature
 	for i := 0; i < 3; i++ {
 		priKey, pubKey := GenBLSKey()
 		pubKeys = append(pubKeys, pubKey)
 
-		data = append(data, i)
+		message = append(message, i)
 		signature := Sign(Encode(i), priKey)
 		sigs = append(sigs, signature)
 	}
-	batchData := BatchEncode(data)
+	batchmessage := BatchEncode(message)
 
 	t0 := time.Now()
 
 	aggregateSignature := AggregateSignatures(sigs)
 
-	result := BatchVerifyAggregate(batchData, pubKeys, aggregateSignature)
+	result := BatchVerifyAggregate(batchmessage, pubKeys, aggregateSignature)
 	wanted := true
 	if result != wanted {
 		t.Fatalf("got result %v but expected %v\n", result, wanted)
@@ -117,13 +117,13 @@ func BenchmarkSign(b *testing.B) {
 	//	generate BLS key
 	priKey, _ := GenBLSKey()
 
-	data := Encode("hello world")
-	wanted := Sign(data, priKey)
+	message := Encode("hello world")
+	wanted := Sign(message, priKey)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		//	digital signature
-		signature := Sign(data, priKey)
+		signature := Sign(message, priKey)
 		if  &wanted == &signature {
 			b.Fatalf("sign failed")
 		}
@@ -135,13 +135,13 @@ func BenchmarkVerify(b *testing.B) {
 	priKey, pubKey := GenBLSKey()
 
 	//	digital signature
-	data := Encode("hello world")
-	signature := Sign(data, priKey)
+	message := Encode("hello world")
+	signature := Sign(message, priKey)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		//	verify signature
-		result := Verify(data, pubKey, signature)
+		result := Verify(message, pubKey, signature)
 		if result != true {
 			b.Fatalf("verify failed")
 		}
@@ -152,15 +152,15 @@ func BenchmarkCommonBLS(b *testing.B) {
 	//	generate BLS key
 	priKey, pubKey := GenBLSKey()
 
-	data := Encode("hello world")
+	message := Encode("hello world")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		//	digital signature
-		signature := Sign(data, priKey)
+		signature := Sign(message, priKey)
 
 		//	verify signature
-		result := Verify(data, pubKey, signature)
+		result := Verify(message, pubKey, signature)
 		if result != true {
 			b.Fatalf("verify failed")
 		}
@@ -168,7 +168,7 @@ func BenchmarkCommonBLS(b *testing.B) {
 }
 
 func BenchmarkAggregateSignature(b *testing.B) {
-	data := Encode("hello world")
+	message := Encode("hello world")
 
 	var pubKeys []*g2pubs.PublicKey
 	var sigs []*g2pubs.Signature
@@ -176,7 +176,7 @@ func BenchmarkAggregateSignature(b *testing.B) {
 		priKey, pubKey := GenBLSKey()
 		pubKeys = append(pubKeys, pubKey)
 
-		signature := Sign(data, priKey)
+		signature := Sign(message, priKey)
 		sigs = append(sigs, signature)
 	}
 
@@ -193,7 +193,7 @@ func BenchmarkAggregateSignature(b *testing.B) {
 }
 
 func BenchmarkVerifyAggregate(b *testing.B) {
-	data := Encode("hello world")
+	message := Encode("hello world")
 
 	var pubKeys []*g2pubs.PublicKey
 	var sigs []*g2pubs.Signature
@@ -201,7 +201,7 @@ func BenchmarkVerifyAggregate(b *testing.B) {
 		priKey, pubKey := GenBLSKey()
 		pubKeys = append(pubKeys, pubKey)
 
-		signature := Sign(data, priKey)
+		signature := Sign(message, priKey)
 		sigs = append(sigs, signature)
 	}
 
@@ -209,7 +209,7 @@ func BenchmarkVerifyAggregate(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result := VerifyAggregate(data, pubKeys, aggregateSignature)
+		result := VerifyAggregate(message, pubKeys, aggregateSignature)
 		if result != true {
 			b.Fatalf("verify aggregate signature failed\n")
 		}
@@ -218,23 +218,23 @@ func BenchmarkVerifyAggregate(b *testing.B) {
 
 func BenchmarkBatchVerifyAggregate(b *testing.B) {
 	var pubKeys []*g2pubs.PublicKey
-	var data []interface{}
+	var message []interface{}
 	var sigs []*g2pubs.Signature
 	for i := 0; i < 3; i++ {
 		priKey, pubKey := GenBLSKey()
 		pubKeys = append(pubKeys, pubKey)
 
-		data = append(data, i)
+		message = append(message, i)
 		signature := Sign(Encode(i), priKey)
 		sigs = append(sigs, signature)
 	}
-	batchData := BatchEncode(data)
+	batchmessage := BatchEncode(message)
 
 	aggregateSignature := AggregateSignatures(sigs)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result := BatchVerifyAggregate(batchData, pubKeys, aggregateSignature)
+		result := BatchVerifyAggregate(batchmessage, pubKeys, aggregateSignature)
 		if result != true {
 			b.Fatalf("batch verify aggregate signature failed\n")
 		}
@@ -242,7 +242,7 @@ func BenchmarkBatchVerifyAggregate(b *testing.B) {
 }
 
 func BenchmarkAggregateBLS(b *testing.B) {
-	data := Encode("hello world")
+	message := Encode("hello world")
 
 	var pubKeys []*g2pubs.PublicKey
 	var sigs []*g2pubs.Signature
@@ -250,45 +250,45 @@ func BenchmarkAggregateBLS(b *testing.B) {
 		priKey, pubKey := GenBLSKey()
 		pubKeys = append(pubKeys, pubKey)
 
-		signature := Sign(data, priKey)
+		signature := Sign(message, priKey)
 		sigs = append(sigs, signature)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		aggregateSignature := AggregateSignatures(sigs)
-		result := VerifyAggregate(data, pubKeys, aggregateSignature)
+		result := VerifyAggregate(message, pubKeys, aggregateSignature)
 		if result != true {
 			b.Fatalf("verify aggregate signature failed\n")
 		}
 	}
 }
 
-func Encode(data interface{}) []byte {
+func Encode(message interface{}) []byte {
 	writer := new(bytes.Buffer)
 	enc := gob.NewEncoder(writer)
-	if err := enc.Encode(data); err != nil {
-		log.Fatalf("encode data failed, %v\n", err)
+	if err := enc.Encode(message); err != nil {
+		log.Fatalf("encode message failed, %v\n", err)
 	}
 	return Hash(writer.Bytes())
 }
 
-func BatchEncode(data []interface{}) [][]byte {
+func BatchEncode(message []interface{}) [][]byte {
 	var result [][]byte
-	for i := 0; i < len(data); i++ {
+	for i := 0; i < len(message); i++ {
 		writer := new(bytes.Buffer)
 		enc := gob.NewEncoder(writer)
-		if err := enc.Encode(data[i]); err != nil {
-			log.Fatalf("encode data failed, %v\n", err)
+		if err := enc.Encode(message[i]); err != nil {
+			log.Fatalf("encode message failed, %v\n", err)
 		}
 		result = append(result, Hash(writer.Bytes()))
 	}
 	return result
 }
 
-//	hash data
-func Hash(data []byte) []byte {
+//	hash message
+func Hash(message []byte) []byte {
 	h := sha256.New()
-	h.Write(data)
+	h.Write(message)
 	return h.Sum(nil)
 }

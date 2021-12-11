@@ -1,10 +1,7 @@
 package bls
 
 import (
-	"bytes"
 	"crypto/rand"
-	"crypto/sha256"
-	"encoding/gob"
 	"github.com/phoreproject/bls/g2pubs"
 	"log"
 )
@@ -19,38 +16,15 @@ func GenBLSKey() (priKey *g2pubs.SecretKey, pubKey *g2pubs.PublicKey) {
 	return
 }
 
-/* -------------------- common: begin -------------------- */
-
 //	digital signature
-func Sign(data interface{}, priKey *g2pubs.SecretKey) *g2pubs.Signature {
-	writer := new(bytes.Buffer)
-	enc := gob.NewEncoder(writer)
-	if err := enc.Encode(data); err != nil {
-		log.Fatalf("[BLS] encode data failed, %v\n", err)
-	}
-	dataBytes := Hash(writer.Bytes())
-
-	signature := g2pubs.Sign(dataBytes, priKey)
-	return signature
+func Sign(data []byte, priKey *g2pubs.SecretKey) *g2pubs.Signature {
+	return g2pubs.Sign(data, priKey)
 }
 
 //	verify signature
-func Verify(data interface{}, pubKey *g2pubs.PublicKey, signature *g2pubs.Signature) bool {
-	writer := new(bytes.Buffer)
-	enc := gob.NewEncoder(writer)
-	if err := enc.Encode(data); err != nil {
-		log.Fatalf("[RSA] encode data failed, %v\n", err)
-	}
-	dataBytes := Hash(writer.Bytes())
-
-	return g2pubs.Verify(dataBytes, pubKey, signature)
+func Verify(data []byte, pubKey *g2pubs.PublicKey, signature *g2pubs.Signature) bool {
+	return g2pubs.Verify(data, pubKey, signature)
 }
-
-/* -------------------- common: end -------------------- */
-
-
-
-/* -------------------- aggregate: begin -------------------- */
 
 //	aggregate public keys
 func AggregatePubKeys(pubKeys []*g2pubs.PublicKey) *g2pubs.PublicKey {
@@ -66,8 +40,8 @@ func AggregatePubKeys(pubKeys []*g2pubs.PublicKey) *g2pubs.PublicKey {
 	return aggregatePubKey
 }
 
-//	aggregate signature
-func AggregateSignature(sigs []*g2pubs.Signature) *g2pubs.Signature {
+//	aggregate signatures
+func AggregateSignatures(sigs []*g2pubs.Signature) *g2pubs.Signature {
 	if len(sigs) == 0 {
 		log.Fatalf("[BLS] no signature to aggregate\n")
 	}
@@ -81,38 +55,11 @@ func AggregateSignature(sigs []*g2pubs.Signature) *g2pubs.Signature {
 }
 
 //	verify aggregate signature
-func VerifyAggregate(data interface{}, pubKeys []*g2pubs.PublicKey, signature *g2pubs.Signature) bool {
-	writer := new(bytes.Buffer)
-	enc := gob.NewEncoder(writer)
-	if err := enc.Encode(data); err != nil {
-		log.Fatalf("[RSA] encode data failed, %v\n", err)
-	}
-	dataBytes := Hash(writer.Bytes())
-
-	return signature.VerifyAggregateCommon(pubKeys, dataBytes)
+func VerifyAggregate(data []byte, pubKeys []*g2pubs.PublicKey, signature *g2pubs.Signature) bool {
+	return signature.VerifyAggregateCommon(pubKeys, data)
 }
 
 //	batch verify aggregate signature
-func VerifyAggregateBatch(data []interface{}, pubKeys []*g2pubs.PublicKey, signature *g2pubs.Signature) bool {
-	var dataBytes [][]byte
-	for i := 0; i < len(data); i++ {
-		writer := new(bytes.Buffer)
-		enc := gob.NewEncoder(writer)
-		if err := enc.Encode(data[i]); err != nil {
-			log.Fatalf("[RSA] encode data failed, %v\n", err)
-		}
-		dataBytes = append(dataBytes, Hash(writer.Bytes()))
-	}
-
-	return signature.VerifyAggregate(pubKeys, dataBytes)
+func BatchVerifyAggregate(data [][]byte, pubKeys []*g2pubs.PublicKey, signature *g2pubs.Signature) bool {
+	return signature.VerifyAggregate(pubKeys, data)
 }
-
-/* -------------------- aggregate: end -------------------- */
-
-//	hash data
-func Hash(data []byte) []byte {
-	h := sha256.New()
-	h.Write(data)
-	return h.Sum(nil)
-}
-

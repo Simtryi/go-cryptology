@@ -2,7 +2,10 @@ package rsa
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/gob"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 )
@@ -16,7 +19,7 @@ func TestBasicVerify(t *testing.T) {
 	t0 := time.Now()
 
 	//	digital signature
-	data := "hello world"
+	data := Encode("hello world")
 	signature := Sign(data, priKey)
 
 	//	verify signature
@@ -39,7 +42,7 @@ func TestFailVerify(t *testing.T) {
 	t0 := time.Now()
 
 	//	digital signature
-	data := "hello world"
+	data := Encode("hello world")
 	signature := Sign(data, priKey1)
 
 	//	verify signature
@@ -56,12 +59,13 @@ func BenchmarkSign(b *testing.B) {
 	//	generate RSA key
 	priKey, _ := GenRSAKey()
 
-	wanted := Sign("hello world", priKey)
+	data := Encode("hello world")
+	wanted := Sign(data, priKey)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		//	digital signature
-		signature := Sign("hello world", priKey)
+		signature := Sign(data, priKey)
 		if bytes.Compare(wanted, signature) != 0{
 			b.Fatalf("sign failed")
 		}
@@ -73,12 +77,13 @@ func BenchmarkVerify(b *testing.B) {
 	priKey, pubKey := GenRSAKey()
 
 	//	digital signature
-	signature := Sign("hello world", priKey)
+	data := Encode("hello world")
+	signature := Sign(data, priKey)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		//	verify signature
-		result := Verify("hello world", pubKey, signature)
+		result := Verify(data, pubKey, signature)
 		if result != true {
 			b.Fatalf("verify failed")
 		}
@@ -89,15 +94,33 @@ func BenchmarkRSA(b *testing.B) {
 	//	generate RSA key
 	priKey, pubKey := GenRSAKey()
 
+	data := Encode("hello world")
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		//	digital signature
-		signature := Sign(i, priKey)
+		signature := Sign(data, priKey)
 
 		//	verify signature
-		result := Verify(i, pubKey, signature)
+		result := Verify(data, pubKey, signature)
 		if result != true {
 			b.Fatalf("verify failed")
 		}
 	}
+}
+
+func Encode(data interface{}) []byte {
+	writer := new(bytes.Buffer)
+	enc := gob.NewEncoder(writer)
+	if err := enc.Encode(data); err != nil {
+		log.Fatalf("encode data failed, %v\n", err)
+	}
+	return Hash(writer.Bytes())
+}
+
+//	hash data
+func Hash(data []byte) []byte {
+	h := sha256.New()
+	h.Write(data)
+	return h.Sum(nil)
 }

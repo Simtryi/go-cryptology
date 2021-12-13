@@ -56,6 +56,34 @@ func TestFailVerify(t *testing.T) {
 	fmt.Printf("... Passed   time: %v ms\n", time.Since(t0).Milliseconds())
 }
 
+func TestAggregatePubKeys(t *testing.T) {
+	fmt.Println("Test : aggregate public keys ...")
+
+	var pubKeys []*g2pubs.PublicKey
+	var priKeys []*g2pubs.SecretKey
+	for i := 0; i < 3; i++ {
+		priKey, pubKey := GenBLSKey()
+		priKeys = append(priKeys, priKey)
+		pubKeys = append(pubKeys, pubKey)
+	}
+	aggregatePubKey := AggregatePubKeys(pubKeys)
+
+	message := Encode("hello world")
+
+	var sigs []*g2pubs.Signature
+	for i := 0; i < 3; i++ {
+		signature := Sign(message, priKeys[i])
+		sigs = append(sigs, signature)
+	}
+	aggregateSignature := AggregateSignatures(sigs)
+
+	result := Verify(message, aggregatePubKey, aggregateSignature)
+	wanted := true
+	if result != wanted {
+		t.Fatalf("got result %v but expected %v\n", result, wanted)
+	}
+}
+
 func TestVerifyAggregateSignature(t *testing.T) {
 	fmt.Println("Test : aggregate signature ...")
 

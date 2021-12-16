@@ -6,3 +6,5 @@ Go implementation of the cryptology
 - [X] BLS
 - [X] Schnorr
 - [X] Edwards25519
+- [X] Reed-Solomon
+- [X] Merkle Tree
